@@ -5,7 +5,7 @@ from collections import Counter
 
 conn = psycopg2.connect(database="MyPersonality", user="postgres",password="qwerty", host="localhost")
 # Set encoding to target DB encoding
-conn.set_client_encoding('WIN1252')
+#conn.set_client_encoding('WIN1252')
 
 # Make a server-side cursor (should fetch 2k at a time)
 status_cur = conn.cursor(name='status_cur')
