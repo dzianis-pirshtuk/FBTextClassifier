@@ -1,0 +1,28 @@
+# Prototype vectors
+
+user_id, gender
+
+
+
+user_id term frequency
+
+----------------
+
+
+select max(tf) from user_token_table
+where user in test group
+group by token
+
+
+------------------
+
+select T.token_name, sum(T.tf)
+from token_table T, IDF_table I
+where T.user_id in test group
+group by T.token_name
+
+-------------------
+
+
+
+
