@@ -29,7 +29,7 @@ def is_all_caps(word):
 	num_upper = len(re.findall(r'[A-Z]',word))
 	num_lower = len(re.findall(r'[a-z]',word))
 
-	return ((num_lower == 0) & (float(num_upper)/len(word) > 0.55 ))
+	return ((num_lower == 0) & (float(num_upper)/len(word) > 0.55 ) & (len(word) > 1))
 
 
 
@@ -37,18 +37,21 @@ print "userid: " + userid
 while status != None:
 	# For each status update, add to TF counter
 
-	if guess_language.guessLanguage(status[2]) == "en":
+	#I add a trailing whitespace to make my regexes work correctly, this is important.
+	status_update = status[2] + ' '
 
-		#Counting the number of times lengthening occurs...
-		status_term_count["aaaa_lengthen_count"] += len(re.findall(r'(.)\1{2,}',status[2]))
-		#...and then normalizing them all lengthengings to 3 repetitions (e.g. Yesssss becomes Yesss)
-		text = re.sub(r'(.)\1{2,}',r'\1\1\1',status[2])
+	if guess_language.guessLanguage(status_update) == "en":
 
-		terms = tokenizer.tokenize(text)
+		#Counting the number of times lengthening occurs. Not treating ellipse as instance of lenghtening, though lengthened ellipses (e.g '.....') are counted.
+		status_term_count["aaaa_lengthen_count"] += (len(re.findall(r'(.)\1{2,}',status_update)) - len(re.findall(r'[^\.][\.]{3}[^\.]',status_update)))
+		#...and then normalizing all lengthengings to 3 repetitions (e.g. Yesssss becomes Yesss)
+		status_update = re.sub(r'(.)\1{2,}',r'\1\1\1',status_update)
+
+		terms = tokenizer.tokenize(status_update)
 		for token in terms:
 
 			#Caps checking does not apply to emoticons.
-			if happyfuntokenizing.emoticon_re.search(token) != None:
+			if happyfuntokenizing.emoticon_re.search(token) == None:
 				#Checking to see if token is in all caps.
 				if is_all_caps(token):
 					status_term_count["aaaa_caps_count"] += 1
