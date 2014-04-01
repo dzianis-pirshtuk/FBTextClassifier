@@ -29,7 +29,7 @@ def is_all_caps(word):
 	num_upper = len(re.findall(r'[A-Z]',word))
 	num_lower = len(re.findall(r'[a-z]',word))
 
-	return (num_lower == 0 & float(num_upper)/len(word) > 0.55 )
+	return ((num_lower == 0) & (float(num_upper)/len(word) > 0.55 ))
 
 
 
@@ -39,21 +39,20 @@ while status != None:
 
 	if guess_language.guessLanguage(status[2]) == "en":
 
-		print type(status[2])
-		#Counting the number of times lengthening occurs, and then normalizing it before token count.
-		num_lengthens = len(re.findall(r'(.)\1{2,}',status[2]))
-		status_term_count["aaaa_lengthen_count"] += num_lengthens
+		#Counting the number of times lengthening occurs...
+		status_term_count["aaaa_lengthen_count"] += len(re.findall(r'(.)\1{2,}',status[2]))
+		#...and then normalizing them all lengthengings to 3 repetitions (e.g. Yesssss becomes Yesss)
 		text = re.sub(r'(.)\1{2,}',r'\1\1\1',status[2])
 
 		terms = tokenizer.tokenize(text)
 		for token in terms:
 
+			#Caps checking does not apply to emoticons.
 			if happyfuntokenizing.emoticon_re.search(token) != None:
-
 				#Checking to see if token is in all caps.
 				if is_all_caps(token):
 					status_term_count["aaaa_caps_count"] += 1
-
+				#lower_casing all words which are not emoticons. Emoticons cant have case changed (e.g. =D != =d)
 				token = token.lower()
 
 			status_term_count[token] += 1
