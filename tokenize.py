@@ -66,7 +66,7 @@ while status != None:
 			if token != None:
 				tup.append((userid, token, cnt))
 		if(len(tup) > 0):
-			args_str = ",".join(cur.mogrify("(%s, %s, %s)", x) for x in tup)
+			args_str = ",".join(tf_cur.mogrify("(%s, %s, %s)", x) for x in tup)
 			tf_cur.execute("INSERT INTO user_tf (userid, term, termcnt) VALUES " + args_str)
 		status_term_count = Counter()
 		if status != None:		
