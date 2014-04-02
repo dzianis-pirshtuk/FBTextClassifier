@@ -1,0 +1,19 @@
+#!/bin/bash
+
+echo "Copy import scripts to /tmp"
+cp ./SQL\ import/* /tmp/
+
+echo "Inital user_status.csv import"
+sudo -u postgres psql MyPersonality -f /tmp/user_status.sql
+
+echo "Tokenizing"
+python ./tokenize.py
+
+echo "Importing (1/3): user_status_tf.csv"
+sudo -u postgres psql MyPersonality -f /tmp/user_status_tf.sql
+
+echo "Importing (2/3): user_status_len.csv"
+sudo -u postgres psql MyPersonality -f /tmp/user_status_len.sql
+
+echo "Importing (3/3): user_status_caps.csv"
+sudo -u postgres psql MyPersonality -f /tmp/user_status_caps.sql
