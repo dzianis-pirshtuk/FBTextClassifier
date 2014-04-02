@@ -3,25 +3,70 @@
 import psycopg2
 import math
 
-
-
-def getPrototypeVectors(attributeName, conn):
-    # create view TestUserData as select 
-
-    # Get the possible values for this attribute
-    q1 = 'SELECT DISTINCT(%s) WHERE %s NOT NULL'
-    uniq_cur = conn.cursor()
-    uniq_cur.execute(q1, (attributeName, ))
-
-    categories = [r[0] for r in uniq_cur]
+class ClassicRocchio:
+    # Database constants
+    primaryKey = "userid"
+    tfTable = "user_status_tf"
+    userInfoTable = "user_info"
     
-    doc
+    # SQL query templates
+    findPossibleValues = """
+    SELECT DISTINCT {attributeName}
+    FROM {userInfoTable}
+    WHERE {attributeName} NOT NULL
+    """
     
+    findDatasetSize = """
+    SELECT COUNT({primaryKey})
+    FROM {userInfoTable}
+    WHERE {attributeName} NOT NULL
+    """
     
-    # For each possible category, find the prototype vector
-    for c in categories:
+    createView = """
+    CREATE VIEW {viewName} AS
+        SELECT * FROM {tfTable}
+        WHERE {primaryKey} IN (
+            SELECT {primaryKey} FROM {userInfoTable}
+            WHERE {attributeName} NOT NULL
+            OFFSET {offset}
+            LIMIT {limit}
+        ) 
+    """
+    
+    dropView = """
+    DROP VIEW {viewName}
+    """
+    
+    idfQuery = """
+    
+    """
+    
+    def __init__(self, attributeName, conn):
+        self.dbConn = conn;
         
-    query = 'select 
+        # Find the number of users with this attribute
+        userCount = self.dbConn.cursor()
+        q = ClassicRocchio.findDatasetSize.format(
+            primaryKey=ClassicRocchio.primaryKey,
+            userInfoTable=ClassicRocchio.userInfoTable,
+            attributeName=attributeName
+            )
+        userCount.execute(q)
+        
+        //self.numUsers = userCount[0][0]
+        
+        
+        # Get the possible values for each attribute
+        attrValues = self.dbConn.cursor()
+        q = ClassicRocchio.findPossibleValues.format(
+            attributeName=attributeName, 
+            userInfoTable=ClassicRocchio.userInfoTable,
+            )
+        attrValues.execute(q)
+    
+        self.attributeValues = [r[0] for r in attrValues].sort()
+        
+
     
 
 
