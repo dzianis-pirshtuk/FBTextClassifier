@@ -73,7 +73,7 @@ if __name__ == '__main__':
 	#Flush whatever might be left from the last parse
 	tup = []
 	for token, cnt in status_term_count.items():
-		if token != None:
+		if token != None and token != "":
 			tup.append((userid, token, cnt))
 	if(len(tup) > 0):
 		tf_csv.writerows(tup)
