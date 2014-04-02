@@ -38,7 +38,7 @@ if __name__ == '__main__':
 		if userid != row[0]:
 			tup = []
 			for token, cnt in status_term_count.items():
-				if token != None:
+				if token != None and token != "":
 					tup.append((userid, token.encode('utf-8'), cnt))
 			if(len(tup) > 0):
 				tf_csv.writerows(tup)
