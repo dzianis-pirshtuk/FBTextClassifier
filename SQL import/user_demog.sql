@@ -4,7 +4,7 @@ DROP TABLE IF EXISTS user_demog;
 
 CREATE TABLE user_demog
 (
-  userid                  VARCHAR(32) NOT NULL,
+  userid                  CHAR(32) NOT NULL,
   gender                  bool,
   birthday                date DEFAULT NULL,
   age                     smallint,
@@ -25,8 +25,7 @@ COPY user_demog
 FROM '/tmp/demog_proc.csv' DELIMITER ',' CSV ENCODING 'LATIN1' ESCAPE '/' HEADER NULL AS '';
 
 CREATE INDEX user_demog_userid_indx ON user_demog (userid);
-
-CLUSTER user_demog_userid_indx ON user_demog;
+CREATE INDEX user_demog_local_indx on user_demog (locale);
 
 COMMIT;
 

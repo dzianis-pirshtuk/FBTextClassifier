@@ -4,22 +4,24 @@ import happyfuntokenizing
 import re
 import csv
 import codecs
+import cStringIO
+import sys
 from collections import Counter
 
 #Setup global objects
 conn = psycopg2.connect(database="MyPersonality", user="postgres",password="qwerty", host="localhost")
 tokenizer = happyfuntokenizing.Tokenizer(preserve_case = True)
-tf_file = open('/tmp/user_status_tf.csv', 'w')
-len_file = open('/tmp/user_status_len.csv', 'w')
-caps_file = open('/tmp/user_status_caps.csv', 'w')
-tf_csv = csv.writer(tf_file, dialect='excel')
-len_csv = csv.writer(len_file, dialect='excel')
-caps_csv = csv.writer(caps_file, dialect='excel')
+tf_file = open('/tmp/user_status_tf.csv', 'wb')
+len_file = open('/tmp/user_status_len.csv', 'wb')
+caps_file = open('/tmp/user_status_caps.csv', 'wb')
+tf_csv = csv.writer(tf_file)
+len_csv = csv.writer(len_file)
+caps_csv = csv.writer(caps_file)
 
 # user status selector curr
 status_cur = conn.cursor("status_cur")
 status_cur.itersize = 1000000 #I'm hoping you can load this much into memory... (you probably can)
-status_cur.execute("SELECT * FROM user_status ORDER BY userid;")
+status_cur.execute("SELECT us.userid, us.posttext FROM user_status us, user_demog ud WHERE us.userid = ud.userid AND (ud.locale = 'en_US' OR ud.locale = 'en_GB') ORDER BY userid;")
 
 # Get all of the status updates for each userid in a loop
 def is_all_caps(word):
@@ -38,8 +40,8 @@ if __name__ == '__main__':
 		if userid != row[0]:
 			tup = []
 			for token, cnt in status_term_count.items():
-				if token != None and token != "":
-					tup.append((userid, token.encode('utf-8'), cnt))
+				if token != None and len(token) > 0 and token != "\0":
+					tup.append((userid.encode("utf-8"), token.encode("utf-8"), str(cnt)))
 			if(len(tup) > 0):
 				tf_csv.writerows(tup)
 				len_csv.writerow((userid, lengthencount))
@@ -51,7 +53,7 @@ if __name__ == '__main__':
 			capscount = 0
 			
 		#I add a trailing whitespace to make my regexes work correctly, this is important.
-		status_update = row[2] + ' '
+		status_update = row[1] + ' '
 		#Counting the number of times lengthening occurs. Not treating ellipse as instance of lenghtening, though lengthened ellipses (e.g '.....') are counted.
 		lengthencount += (len(re.findall(r'(.)\1{2,}',status_update)) - len(re.findall(r'[^\.][\.]{3}[^\.]',status_update)))
 		#...and then normalizing all lengthengings to 3 repetitions (e.g. Yesssss becomes Yesss)
@@ -66,15 +68,17 @@ if __name__ == '__main__':
 					capscount += 1
 				#lower_casing all words which are not emoticons. Emoticons cant have case changed (e.g. =D != =d)
 				token = token.lower()
-
+			if token == "":
+				print "BLANK TOKEN"
+				sys.exit(0)
 			status_term_count[token] += 1
 			#print token
 
 	#Flush whatever might be left from the last parse
 	tup = []
 	for token, cnt in status_term_count.items():
-		if token != None and token != "":
-			tup.append((userid, token, cnt))
+		if token != None and len(token) > 0 and token != "\0":
+			tup.append((userid.encode("utf-8"), token.encode("utf-8"), str(cnt)))
 	if(len(tup) > 0):
 		tf_csv.writerows(tup)
 	status_term_count = Counter()
@@ -83,4 +87,5 @@ if __name__ == '__main__':
 	lengthencount = 0
 	capscount = 0
 	#commit changes back to DB
+	print conn.encoding
 	conn.commit()

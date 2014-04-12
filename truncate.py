@@ -13,14 +13,14 @@ def main():
         sys.exit(1)
     
     try:
-        inFile = open(sys.argv[1], 'r')
+        inFile = open(sys.argv[1], 'rb')
     except:
         print usage
         print 'Error opening input CSV file'
         sys.exit(1)
     
     try:
-        outFile = open(sys.argv[2], 'w')
+        outFile = open(sys.argv[2], 'wb')
     except:
         print usage
         print 'Error opening output CSV file'
@@ -35,7 +35,7 @@ def main():
     
     
     for i in range(0, numLines):
-        outFile.write(inFile.readline().decode('utf-8', errors='ignore'))
+        outFile.write(inFile.readline())
     
     inFile.close()
     outFile.close()

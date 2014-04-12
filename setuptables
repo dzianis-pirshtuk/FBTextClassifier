@@ -3,17 +3,23 @@
 echo "Copy import scripts to /tmp"
 cp ./SQL\ import/* /tmp/
 
-echo "Inital user_status.csv import"
-sudo -u postgres psql MyPersonality -f /tmp/user_status.sql
+echo "preprocessing demog.csv"
+python ./processdemog.py 2>&1 | tee LOGFILE.txt
+
+echo "Importing demog_proc.csv"
+sudo -u postgres psql MyPersonality -f /tmp/user_demog.sql 2>&1 | tee -a LOGFILE.txt
+
+echo "Initial user_status.csv import"
+sudo -u postgres psql MyPersonality -f /tmp/user_status.sql 2>&1 | tee -a LOGFILE.txt
 
 echo "Tokenizing"
-python ./tokenize.py
+python ./tokenize.py 2>&1 | tee -a LOGFILE.txt
 
 echo "Importing (1/3): user_status_tf.csv"
-sudo -u postgres psql MyPersonality -f /tmp/user_status_tf.sql
+sudo -u postgres psql MyPersonality -f /tmp/user_status_tf.sql 2>&1 | tee -a LOGFILE.txt
 
 echo "Importing (2/3): user_status_len.csv"
-sudo -u postgres psql MyPersonality -f /tmp/user_status_len.sql
+sudo -u postgres psql MyPersonality -f /tmp/user_status_len.sql 2>&1 | tee -a LOGFILE.txt
 
 echo "Importing (3/3): user_status_caps.csv"
-sudo -u postgres psql MyPersonality -f /tmp/user_status_caps.sql
+sudo -u postgres psql MyPersonality -f /tmp/user_status_caps.sql 2>&1 | tee -a LOGFILE.txt

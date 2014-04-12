@@ -9,11 +9,11 @@ CREATE TABLE user_status
 (
   userid     CHAR(32) NOT NULL,
   postdate   VARCHAR NOT NULL,
-  posttext   text
+  posttext   TEXT
 );
 
 COPY user_status
-FROM '/tmp/user_status.csv' DELIMITER ',' CSV ENCODING 'WIN1252' ESCAPE '/' HEADER;
+FROM '/tmp/user_status.csv' DELIMITER ',' CSV ENCODING 'LATIN1' ESCAPE '/' HEADER;
 
 CREATE INDEX useridindx ON user_status USING btree (userid);
 
