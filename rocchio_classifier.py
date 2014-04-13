@@ -19,17 +19,40 @@ class ClassicRocchio:
     WHERE {attributeName} NOT NULL
     """
     
-    createTestView = """
+    createTestViews = """
+    CREATE VIEW testInfo AS
+        SELECT * FROM user_demog_good
+        WHERE {attributeName} IS NOT NULL 
+            AND (locale = 'en_US' OR locale = 'en_GB')
+            AND userid IN (SELECT userid FROM user_status_tf)
+        ORDER BY userid
+        OFFSET {offset}
+        LIMIT {limit}
+    
     CREATE VIEW testData AS
         SELECT * FROM user_status_tf
         WHERE userid IN (
-            SELECT userid FROM user_demog
-            WHERE {attributeName} NOT NULL
-            ORDER BY userid
-            OFFSET {offset}
-            LIMIT {limit}
-        ) 
+            SELECT userid FROM testInfo
+        );
     """
+    createTrainingViews = """
+        
+    CREATE VIEW trainingInfo AS
+        SELECT * FROM user_demog
+        WHERE {attributeName} IS NOT NULL 
+            AND (locale = 'en_US' OR locale = 'en_GB')
+            AND userid IN (SELECT userid FROM user_status_tf)
+        ORDER BY userid
+        OFFSET {offset}
+        LIMIT {limit}
+    
+    CREATE VIEW trainingData AS
+        SELECT * FROM user_status_tf
+        WHERE userid IN (
+            SELECT userid FROM trainingInfo
+        );
+    """
+    
     
     dropView = """
     DROP VIEW {viewName}
@@ -37,7 +60,7 @@ class ClassicRocchio:
     
     idfQuery = """
     CREATE VIEW termIDFs AS
-        SELECT term, LN((SELECT COUNT(*) FROM trainingInfo) / COUNT(userid)) AS idf
+        SELECT term, LN((SELECT COUNT(*) FROM trainingInfo)::float / COUNT(userid)) AS idf
         FROM trainingData
         GROUP BY term
     """
@@ -47,7 +70,7 @@ class ClassicRocchio:
         SELECT Tr.{attributeName}, T.term, (SUM(LN(1 + T.cnt)) * I.idf) AS weight
         FROM trainingData T, trainingInfo Tr, termIDFs I
         WHERE Tr.userid = T.userid AND I.term = T.term
-        GROUP BY Tr.{attributeName}, T.term
+        GROUP BY Tr.{attributeName}, T.term, I.idf
     """
     
     prototypeVectorLengthsQuery = """
@@ -60,9 +83,8 @@ class ClassicRocchio:
     userWeightsQuery = """
     CREATE VIEW userWeights AS
         SELECT T.userid, T.term, LN(1 + T.cnt) * I.idf AS weight
-        FROM testingData T, termIDfs I
+        FROM testData T, termIDfs I
         WHERE T.term = I.term
-        GROUP BY T.userid, T.term
     """
     
     userVectorLengthsQuery = """
@@ -83,9 +105,10 @@ class ClassicRocchio:
     
     finalResultsQuery = """
     SELECT * FROM results R1
-    WHERE R1.cosSim = (
-        SELECT MAX(R2.cosSim) FROM results R2
-        WHERE R1.userid = R2.userid
+    WHERE R1.cossim = (
+        SELECT MAX(R2.cossim)
+        FROM results R2
+        WHERE R2.userid = R1.userid
         )
     """
     
