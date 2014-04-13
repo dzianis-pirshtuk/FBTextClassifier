@@ -20,8 +20,7 @@ def getPrototypeVectors(attributeName, conn):
     
     # For each possible category, find the prototype vector
     for c in categories:
-        
-    query = 'select 
+        query = 'select'
     
 
 
