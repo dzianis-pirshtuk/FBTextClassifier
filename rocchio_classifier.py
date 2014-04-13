@@ -114,10 +114,6 @@ class ClassicRocchio:
         self.attributeValues = [r[0] for r in attrValues].sort()
         
 
-    
-
 
 def main():
     conn = psycopg2.connect(database="MyPersonality", user="postgres",password="qwerty", host="localhost")
-
-select 
