@@ -5,42 +5,89 @@ import math
 
 class ClassicRocchio:
     # Database constants
-    primaryKey = "userid"
-    tfTable = "user_status_tf"
-    userInfoTable = "user_info"
     
     # SQL query templates
     findPossibleValues = """
     SELECT DISTINCT {attributeName}
-    FROM {userInfoTable}
+    FROM user_demog
     WHERE {attributeName} NOT NULL
     """
     
     findDatasetSize = """
-    SELECT COUNT({primaryKey})
-    FROM {userInfoTable}
+    SELECT COUNT(userid)
+    FROM user_demog
     WHERE {attributeName} NOT NULL
     """
     
-    createView = """
-    CREATE VIEW {viewName} AS
-        SELECT * FROM {tfTable}
-        WHERE {primaryKey} IN (
-            SELECT {primaryKey} FROM {userInfoTable}
+    createTestView = """
+    CREATE VIEW testData AS
+        SELECT * FROM user_status_tf
+        WHERE userid IN (
+            SELECT userid FROM user_demog
             WHERE {attributeName} NOT NULL
+            ORDER BY userid
             OFFSET {offset}
             LIMIT {limit}
         ) 
     """
+    
     
     dropView = """
     DROP VIEW {viewName}
     """
     
     idfQuery = """
-    
+    CREATE VIEW termIDFs AS
+        SELECT term, LN((SELECT COUNT(*) FROM trainingInfo) / COUNT(userid)) AS idf
+        FROM trainingData
+        GROUP BY term
     """
     
+    termWeightQuery = """
+    CREATE VIEW termWeights AS
+        SELECT D.{attributeName}, T.term, (SUM(LN(1 + T.cnt)) * I.idf) AS weight
+        FROM trainingData T, user_demog D, termIDFs I
+        WHERE D.userid = T.userid AND I.term = T.term
+        GROUP BY D.{attributeName}, T.term
+    """
+    
+    prototypeVectorLengthsQuery = """
+    CREATE VIEW prototypeVectorLengths AS
+        SELECT {attributeName}, SQRT(SUM(weight * weight)) AS vectorLength
+        FROM termWeights
+        GROUP BY {attributeName}
+    """
+    
+    userWeightsQuery = """
+    CREATE VIEW userWeights AS
+        SELECT T.userid, T.term, LN(1 + T.cnt) * I.idf AS weight
+        FROM testingData T, termIDfs I
+        WHERE T.term = I.term
+        GROUP BY T.userid, T.term
+    """
+    
+    userVectorLengthsQuery = """
+    CREATE VIEW userVectorLengths AS
+        SELECT userid, SQRT(SUM(weight * weight)) AS vectorLength
+        FROM userWeights
+        GROUP BY userid
+    """
+    
+    resultsViewQuery = """
+    CREATE VIEW results AS
+        SELECT U.userid, W.{attributeName}, 
+            (SUM(U.weight * W.weight) / (UVLen.vectorLength * PVLen.vectorLength)) AS cosSim
+        FROM userWeights U, termWeights W, userVectorLengths UVLen, prototypeVectorLengths PVLen
+        WHERE U.userid = UVLen.userid AND U.term = W.term AND W.{attributeName} = PVLen.{attributeName}
+        GROUP BY U.userid, UVLen.vectorLength, W.{attributeName}, PVLen.vectorLength
+    """
+    
+    finalResultsQuery = """
+    SELECT c
+    """
+    
+    
+
     def __init__(self, attributeName, conn):
         self.dbConn = conn;
         
@@ -53,7 +100,7 @@ class ClassicRocchio:
             )
         userCount.execute(q)
         
-        //self.numUsers = userCount[0][0]
+        # self.numUsers = userCount[0][0]
         
         
         # Get the possible values for each attribute
