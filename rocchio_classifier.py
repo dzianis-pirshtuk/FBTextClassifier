@@ -31,7 +31,6 @@ class ClassicRocchio:
         ) 
     """
     
-    
     dropView = """
     DROP VIEW {viewName}
     """
@@ -45,10 +44,10 @@ class ClassicRocchio:
     
     termWeightQuery = """
     CREATE VIEW termWeights AS
-        SELECT D.{attributeName}, T.term, (SUM(LN(1 + T.cnt)) * I.idf) AS weight
-        FROM trainingData T, user_demog D, termIDFs I
-        WHERE D.userid = T.userid AND I.term = T.term
-        GROUP BY D.{attributeName}, T.term
+        SELECT Tr.{attributeName}, T.term, (SUM(LN(1 + T.cnt)) * I.idf) AS weight
+        FROM trainingData T, trainingInfo Tr, termIDFs I
+        WHERE Tr.userid = T.userid AND I.term = T.term
+        GROUP BY Tr.{attributeName}, T.term
     """
     
     prototypeVectorLengthsQuery = """
@@ -83,12 +82,16 @@ class ClassicRocchio:
     """
     
     finalResultsQuery = """
-    SELECT c
+    SELECT * FROM results R1
+    WHERE R1.cosSim = (
+        SELECT MAX(R2.cosSim) FROM results R2
+        WHERE R1.userid = R2.userid
+        )
     """
     
     
 
-    def __init__(self, attributeName, conn):
+    def __init__(self, attributeName, numFolds, conn):
         self.dbConn = conn;
         
         # Find the number of users with this attribute
@@ -99,6 +102,7 @@ class ClassicRocchio:
             attributeName=attributeName
             )
         userCount.execute(q)
+        
         
         # self.numUsers = userCount[0][0]
         
