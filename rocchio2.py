@@ -20,12 +20,14 @@ userInfoCursor.execute(userInfo)
 
 num_correct = 0
 
-
+#List of distinct users.
 user_list = []
 tf_dict = {}
 idf_dict = {}
 
+#Dict mapping userid to category type.
 info_dict = {}
+
 
 rep_vectors_dict = {}
 
@@ -120,6 +122,7 @@ def fold_iteration(lower_fold_ind, upper_fold_ind):
 
 	test_idf_dict = {}
 
+	#Constructing idf of documents in test set...
 	for i in range(lower_fold_ind,upper_fold_ind):
 
 		for term in tf_dict[user_list[i]]:
@@ -129,7 +132,7 @@ def fold_iteration(lower_fold_ind, upper_fold_ind):
 			else:
 				test_idf_dict[term] = 1
 
-
+	#... and subtracting that idf from the training set idf (because the test is now not in the training set)
 	for key_val in test_idf_dict.items():
 
 		idf_dict[key_val[0]] -= key_val[1]
@@ -137,9 +140,9 @@ def fold_iteration(lower_fold_ind, upper_fold_ind):
 		if idf_dict[key_val[0]] == 0:
 			idf_dict.remove(key_val[0])
 
-
+	#Constructing rep vectors from non-test users.
 	for i in range(0,lower_test_ind+1):
-
+		#Construct_rep_vectors adds to the representative vector.
 		construct_rep_vectors(i)
 
 	for i in range(higher_test_ind, len(user_list)):
@@ -147,7 +150,7 @@ def fold_iteration(lower_fold_ind, upper_fold_ind):
 		construct_rep_vectors(i)
 
 
-
+	#Running tests.
 	for i in range(lower_fold_ind,higher_fold_ind):
 
 		userid = user_list[i]
@@ -170,12 +173,15 @@ def fold_iteration(lower_fold_ind, upper_fold_ind):
 			num_correct += 1
 
 
+	#Adding back idfs from test set.
 	for key_val in test_idf_dict.items():
 
 		if key_val[0] in idf_dict:
 			idf_dict[key_val[0]] += key_val[1]
 		else 
 			idf_dict[key_val[0]] = key_val[1]
+
+	rep_vectors_dict.clear()
 
 	return num_correct
 
