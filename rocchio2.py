@@ -3,7 +3,7 @@
 import psycopg2
 import math
 
-tfs = "SELECT userid, term, cnt FROM user_status_tf WHERE userid IN (SELECT userid FROM user_demog_locale WHERE gender NOTNULL) ORDER BY userid LIMIT 100000"
+tfs = "SELECT userid, term, cnt FROM user_status_tf WHERE userid IN (SELECT userid FROM user_demog_locale WHERE gender NOTNULL) ORDER BY userid LIMIT 500000"
 userInfo = "SELECT userid, gender FROM user_demog_locale WHERE gender NOTNULL"
 
 conn = psycopg2.connect(database="MyPersonality", user="postgres",password="qwerty", host="localhost")
@@ -33,7 +33,7 @@ def ln_tf_idf(tf,idf):
 	if idf == 0:
 		return 0
 	else:
-		return (math.log(float(1 + tf),2) * math.log((float(len(user_list)) / idf),2))
+		return (math.log(float(1 + tf)) * math.log((float(len(user_list)) / idf)))
 
 def vect_length(vect):
 	
@@ -92,7 +92,7 @@ def construct_idf_dict():
 	for tfEntry in tfCursor:
 	    
 		if (userid != tfEntry[0]):
-			print "[*] Constructing TF-IDF for user " + tfEntry[0]
+			print "    [*] Constructing TF-IDF for user " + tfEntry[0]
 			if (userid != ""):
 
 				user_list.append(userid)
@@ -213,9 +213,10 @@ def main():
 		if i == int(num_folds)-1:
 			higher_fold_ind = len(user_list)
 		else:
-			higher_fold_ind = lower_fold_ind + sizeof_fold + 1
-
-		total_correct_predictions += fold_iteration(lower_fold_ind,higher_fold_ind)
+			higher_fold_ind = lower_fold_ind + sizeof_fold
+		correct_this_round = fold_iteration(lower_fold_ind,higher_fold_ind)
+		print "    [*] " + str(correct_this_round) + "/" + str(sizeof_fold) + " = " + str(float(correct_this_round) / int(sizeof_fold))
+		total_correct_predictions += correct_this_round
 
 	print "Prediction accuracy", float(total_correct_predictions)/len(user_list)
 
