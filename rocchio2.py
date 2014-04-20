@@ -3,15 +3,13 @@
 import psycopg2
 import math
 
-tfs = "SELECT userid, term, cnt FROM user_status_tf ORDER BY userid"
-userInfo = "SELECT userid, gender FROM user_demog WHERE (ud.locale='en_US' OR ud.locale='en_GB') AND ud.userid IN (SELECT userid from user_status);"
-idfs = """SELECT term, LN((SELECT COUNT(*) FROM trainingInfo)::float / COUNT(userid)) AS idf
-        FROM trainingData
-        GROUP BY term;"""
+tfs = "SELECT userid, term, cnt FROM user_status_tf WHERE userid IN (SELECT userid FROM user_demog_locale WHERE gender NOTNULL) ORDER BY userid LIMIT 100000"
+userInfo = "SELECT userid, gender FROM user_demog_locale WHERE gender NOTNULL"
 
 conn = psycopg2.connect(database="MyPersonality", user="postgres",password="qwerty", host="localhost")
 
 tfCursor = conn.cursor("x")
+tfCursor.itersize = 1000000
 tfCursor.execute(tfs);
 
 userInfoCursor = conn.cursor("y")
@@ -32,8 +30,10 @@ info_dict = {}
 rep_vectors_dict = {}
 
 def ln_tf_idf(tf,idf):
-
-	return (math.log(float(1 + tf),2) * math.log((float(len(user_list)) / idf),2))
+	if idf == 0:
+		return 0
+	else:
+		return (math.log(float(1 + tf),2) * math.log((float(len(user_list)) / idf),2))
 
 def vect_length(vect):
 	
@@ -41,7 +41,7 @@ def vect_length(vect):
 
 	for key in vect:
 		
-		length += (tf_idf(vect[key],idf_dict[vect[key]]+1) ** 2)
+		length += (ln_tf_idf(vect[key],idf_dict[key]+1) ** 2)
 
 	length = (length ** 0.5)
 
@@ -67,7 +67,7 @@ def construct_rep_vectors(i):
 
 
 
-def norm_tf_idf_sscore(i, query_dict,doc_dict):
+def norm_tf_idf_sscore(query_dict,doc_dict):
 
 	score = 0.0
 
@@ -75,7 +75,7 @@ def norm_tf_idf_sscore(i, query_dict,doc_dict):
 
 		if key in doc_dict:
 
-			score += (tf_idf(query_dict[key],idf_dict[key])*tf_idf(doc_dict[key],idf_dict[key]))
+			score += (ln_tf_idf(query_dict[key],idf_dict[key])*ln_tf_idf(doc_dict[key],idf_dict[key]))
 
 	q_v_len = vect_length(query_dict)
 	d_v_len = vect_length(doc_dict)
@@ -87,19 +87,19 @@ def norm_tf_idf_sscore(i, query_dict,doc_dict):
 def construct_idf_dict():
 
 	temp_tf_dict = {}
-	user_id = ""
+	userid = ""
 
 	for tfEntry in tfCursor:
 	    
-		if (user_id != tfEntry[0]):
-
-			if (user_id != ""):
+		if (userid != tfEntry[0]):
+			print "[*] Constructing TF-IDF for user " + tfEntry[0]
+			if (userid != ""):
 
 				user_list.append(userid)
-				tf_dict[user_id] = temp_tf_dict
+				tf_dict[userid] = dict(temp_tf_dict)
 				temp_tf_dict.clear()
 
-			user_id = tfEntry[0]
+			userid = tfEntry[0]
 
 		temp_tf_dict[tfEntry[1]] = tfEntry[2]
 
@@ -122,36 +122,38 @@ def fold_iteration(lower_fold_ind, upper_fold_ind):
 
 	test_idf_dict = {}
 
+
 	#Constructing idf of documents in test set...
 	for i in range(lower_fold_ind,upper_fold_ind):
-
-		for term in tf_dict[user_list[i]]:
-			
+		
+		for term in tf_dict[user_list[i]]:		
 			if term in test_idf_dict:
 				test_idf_dict[term] += 1
 			else:
 				test_idf_dict[term] = 1
+		
 
 	#... and subtracting that idf from the training set idf (because the test is now not in the training set)
 	for key_val in test_idf_dict.items():
+		#print idf_dict[key_val[0]]	
+		#print test_idf_dict[key_val[0]]
+		#print key_val[0]
+
 
 		idf_dict[key_val[0]] -= key_val[1]
 
-		if idf_dict[key_val[0]] == 0:
-			idf_dict.remove(key_val[0])
-
 	#Constructing rep vectors from non-test users.
-	for i in range(0,lower_test_ind+1):
+	for i in range(0,lower_fold_ind+1):
 		#Construct_rep_vectors adds to the representative vector.
 		construct_rep_vectors(i)
 
-	for i in range(higher_test_ind, len(user_list)):
+	for i in range(upper_fold_ind, len(user_list)):
 
 		construct_rep_vectors(i)
 
 
 	#Running tests.
-	for i in range(lower_fold_ind,higher_fold_ind):
+	for i in range(lower_fold_ind,upper_fold_ind):
 
 		userid = user_list[i]
 
@@ -160,7 +162,7 @@ def fold_iteration(lower_fold_ind, upper_fold_ind):
 
 		for rep_vector in rep_vectors_dict.items():
 
-			sim_score = norm_tf_idf_sscore(idf_dict[userid], rep_vector[1])
+			sim_score = norm_tf_idf_sscore(tf_dict[userid], rep_vector[1])
 
 			if sim_score > max_sim_score:
 
@@ -178,7 +180,7 @@ def fold_iteration(lower_fold_ind, upper_fold_ind):
 
 		if key_val[0] in idf_dict:
 			idf_dict[key_val[0]] += key_val[1]
-		else 
+		else:
 			idf_dict[key_val[0]] = key_val[1]
 
 	rep_vectors_dict.clear()
@@ -191,7 +193,9 @@ def fold_iteration(lower_fold_ind, upper_fold_ind):
 
 def main():
 
+	print "[+] constructing info dict"
 	construct_info_dict()
+	print "[+] constructing tf-idf dict"
 	construct_idf_dict()
 
 
@@ -199,17 +203,19 @@ def main():
 
 	num_folds = raw_input("How many folds?")
 
-	sizeof_fold = len(user_list)/num_folds
+	sizeof_fold = len(user_list)/int(num_folds) 
+	print "[+] Running test on folds of size " + str(sizeof_fold)
 
-	for i in range(num_folds)
+	for i in range(int(num_folds)):
+		print "[+] Testing fold " + str(i+1) + " of " + str(num_folds)
 
 		lower_fold_ind = i*sizeof_fold
-		if i = num_folds -1
+		if i == int(num_folds)-1:
 			higher_fold_ind = len(user_list)
-		else
+		else:
 			higher_fold_ind = lower_fold_ind + sizeof_fold + 1
 
-	total_correct_predictions += fold_iteration(lower_fold_ind,higher_fold_ind)
+		total_correct_predictions += fold_iteration(lower_fold_ind,higher_fold_ind)
 
 	print "Prediction accuracy", float(total_correct_predictions)/len(user_list)
 
@@ -217,6 +223,5 @@ def main():
 
 
 
-    
 if __name__ == '__main__':
-    main()
+    main() 
