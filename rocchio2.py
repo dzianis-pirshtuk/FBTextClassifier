@@ -23,25 +23,30 @@ user_list = []
 tf_dict = {}
 idf_dict = {}
 
+iter_idf_dict = {}
+
 #Dict mapping userid to category type.
 info_dict = {}
 
 
 rep_vectors_dict = {}
 
-def ln_tf_idf(tf,idf):
-	if idf == 0:
-		return 0
-	else:
-		return (math.log(float(1 + tf)) * math.log((float(len(user_list)) / idf)))
+def ln_tf_idf(userid, term):
 
-def vect_length(vect):
+	return (tf_dict[userid][term] * iter_idf_dict[term])
+
+def vect_length(userid, vect):
 	
 	length = 0.0
 
 	for key in vect:
 		
-		length += (ln_tf_idf(vect[key],idf_dict[key]+1) ** 2)
+		w = vect[key]
+
+		if userid != "":
+			w = ln_tf_idf(userid, key)
+
+		length += (w ** 2)
 
 	length = (length ** 0.5)
 
@@ -58,7 +63,7 @@ def construct_rep_vectors(i):
 
 	for term in tf_dict[userid]:
 
-		w = ln_tf_idf(tf_dict[userid][term],idf_dict[term])
+		w = ln_tf_idf(userid, term)
 
 		if term in rep_vectors_dict[usertype]:
 			rep_vectors_dict[usertype][term] += w
@@ -67,18 +72,18 @@ def construct_rep_vectors(i):
 
 
 
-def norm_tf_idf_sscore(query_dict,doc_dict):
+def norm_tf_idf_sscore(userid,rep_dict):
 
 	score = 0.0
 
-	for key in query_dict:
+	for key in tf_dict[userid]:
 
-		if key in doc_dict:
+		if key in rep_dict:
 
-			score += (ln_tf_idf(query_dict[key],idf_dict[key])*ln_tf_idf(doc_dict[key],idf_dict[key]))
+			score += (ln_tf_idf(userid, key)*rep_dict[key]))
 
-	q_v_len = vect_length(query_dict)
-	d_v_len = vect_length(doc_dict)
+	q_v_len = vect_length(userid, tf_dict[userid])
+	d_v_len = vect_length("", rep_dict)
 
 	score = (score / (q_v_len*d_v_len))
 
@@ -101,12 +106,18 @@ def construct_idf_dict():
 
 			userid = tfEntry[0]
 
-		temp_tf_dict[tfEntry[1]] = tfEntry[2]
+		temp_tf_dict[tfEntry[1]] = math.log(1 + tfEntry[2])
 
 		if tfEntry[1] in idf_dict:
 			idf_dict[tfEntry[1]] += 1
 		else:
 			idf_dict[tfEntry[1]] = 1
+
+
+	for term in idf_dict:
+
+		iter_idf_dict[term] = math.log(float(len(user_list))/idf_dict[term])
+
 
 def construct_info_dict():
 
@@ -141,6 +152,11 @@ def fold_iteration(lower_fold_ind, upper_fold_ind):
 
 
 		idf_dict[key_val[0]] -= key_val[1]
+
+		if (idf_dict[key_val[0]] == 0):
+			iter_idf_dict[key_val[0]] = 0
+		else:
+			iter_idf_dict[key_val[0]] = math.log(float(len(user_list))/idf_dict[key_val[0]])
 
 	#Constructing rep vectors from non-test users.
 	for i in range(0,lower_fold_ind+1):
@@ -182,6 +198,13 @@ def fold_iteration(lower_fold_ind, upper_fold_ind):
 			idf_dict[key_val[0]] += key_val[1]
 		else:
 			idf_dict[key_val[0]] = key_val[1]
+
+				idf_dict[key_val[0]] -= key_val[1]
+
+		if (idf_dict[key_val[0]] == 0):
+			iter_idf_dict[key_val[0]] = 0
+		else:
+			iter_idf_dict[key_val[0]] = math.log(float(len(user_list))/idf_dict[key_val[0]])
 
 	rep_vectors_dict.clear()
 
