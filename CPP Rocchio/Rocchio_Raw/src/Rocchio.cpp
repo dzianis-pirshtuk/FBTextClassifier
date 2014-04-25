@@ -73,7 +73,7 @@ void loadData(unordered_map<string, unordered_map<string, double>> &user_status_
 
 double getScore(unordered_map<string, double> &user_tf, unordered_map<string, double> &repVect,
 		unordered_map<string, int> &user_status_idf, double logtrainingSize, double repVectLength,
-		int& prior, double probWeight = 0.04){
+		int& prior, double probWeight = 0.0){
 	double score = 0;
 	double userlen = 0;
 
