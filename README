@@ -60,6 +60,9 @@ folder, the preprocessor will generate the user status term frequency file
 and the user demog file for the target variable (set at the top of the
 preprocessor)
 
+You'll also need to install the YAML module using "sudo python setup.py" in the
+YAML src directory
+
 This implementation will load roughly 7GB of data, and run in 30 minutes to
 1 hour 20 minutes (depending on the options used)
 
