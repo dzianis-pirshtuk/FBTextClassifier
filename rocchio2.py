@@ -18,17 +18,21 @@ userInfoCursor.execute(userInfo)
 
 num_correct = 0
 
-#List of distinct users.
+#List of distinct users. Iterated over during N-fold testing
 user_list = []
+
+#A dictionary of dictionaries. The first key is userid. The second key is the term.
+#The returned value is that user's TF for the given term.
 tf_dict = {}
 idf_dict = {}
 
 iter_idf_dict = {}
 
-#Dict mapping userid to category type.
+#Dict mapping userid to the attribute category it has (i.e., user 
+#John to Male).
 info_dict = {}
 
-
+#A dict of representative vectors, one for each attribute category. 
 rep_vectors_dict = {}
 
 def ln_tf_idf(userid, term):
@@ -52,6 +56,9 @@ def vect_length(userid, vect):
 
 	return length 		
 
+
+#Adds a user belonging to a certain attribute category to that category's
+#representative vector.
 def construct_rep_vectors(i):
 
 	userid = user_list[i]
@@ -96,6 +103,9 @@ def construct_idf_dict():
 
 	for tfEntry in tfCursor:
 	    
+	    #Our query orders status updates by userid. When userid != the current userid we
+	    #are reading status updates for, that means we have read all of the status updates.
+	    #At this point we push that user's tf dict to the tf_dict.
 		if (userid != tfEntry[0]):
 			print "    [*] Constructing TF-IDF for user " + tfEntry[0]
 			if (userid != ""):
