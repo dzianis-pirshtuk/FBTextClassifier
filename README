@@ -44,7 +44,7 @@ The python script, as is, limits the number of userid:term:count tuples it pulls
 user data. Execution takes ~4 minutes with 2 folds. If  this is too long, the script can be further limited by changing the limit set in the query defined in line 6 to anything other 
 than 500,000. Alternatively, the limit can be eliminated from the query entirely, but this is not advisable, as a full run over the entire dataset will take ~9.5 hours to complete.
 
-As is, the code will perform classification over gender. In order to have the code classify over relationship status or age instead ...
+As is, the code will perform classification over gender. In order to have the code classify over relationship status or age instead, you can easily change the SQL queries to target a different user_demog column.
 
 
 C++ Classifier
