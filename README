@@ -50,7 +50,9 @@ As is, the code will perform classification over gender. In order to have the co
 C++ Classifier
 ==============
 
-To build, just run make
+To build, just run make in the CPP Rocchio folder.
+
+Deps: Boost libraries and C++ 11 compat GGC
 
 ###############################################################################
 Python Preprocessor: PyTokenSorter
