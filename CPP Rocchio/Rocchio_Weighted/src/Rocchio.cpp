@@ -1,9 +1,7 @@
 //============================================================================
 // Name        : Rocchio.cpp
 // Author      : Noah E. Crocker
-// Version     :
-// Copyright   : Your copyright notice
-// Description : Hello World in C++, Ansi-style
+// Version     : 2.000001
 //============================================================================
 
 #include <iostream>
@@ -25,12 +23,12 @@ void loadData(unordered_map<string, unordered_map<string, double>> &user_status_
 		vector<demoginfo> &user_demog,
 		unordered_map<int, int>& prior) {
 
-	ifstream user_demog_file("..\\demog_proc.csv");
+	ifstream user_demog_file("../demog_proc.csv");
 	if(user_demog_file.bad()){
 		cout << "Error opening demog_proc.csv\n";
 		exit(1);
 	}
-	ifstream user_status_tf_file("..\\user_status_tf_proc.csv");
+	ifstream user_status_tf_file("../user_status_tf_proc.csv");
 	if(user_status_tf_file.bad()){
 		cout << "Error opening user_status_tf.csv\n";
 		exit(1);
