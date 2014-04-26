@@ -10,7 +10,7 @@ from nltk.stem.porter import PorterStemmer
 # 1: gender
 # 3: age
 # 4: relationship_status
-target = 4
+target = 1
 stem = False
 stopwordRemoval = False
 
