@@ -1,0 +1,74 @@
+FBTextClassifier
+================
+
+EECS 498 (Intro. to Information Retrieval) Final Project: Text classification applied to social media
+
+In order to run our classifier, the appropriate csv files must be included in the working directory. These come from the myPersonality Project website.
+
+In order to access the dataset, the following user and pass, provided by Rada, must be used. 
+Login : rada_mihalcea
+Password : beuzii34
+
+The links to the appropriate data files are:
+
+
+
+We implement our Rocchio Classification Model in three languages: SQL, Python, and C++. Below you will find instructions on how to run each of the three implementations. We reccomend
+running the C++ implementation, as it is the fastest and most straightforward to execute.
+
+
+
+SQL Classifier
+==============
+
+The queries in rocchio.sql will build the necessary views to perform classification on gender with 10,000 users. 
+
+After running the setuptables script (with sudo), you can then perform sql-based classification
+
+You can run these queries using psql and PostgreSQL, and they should finish in several hours. The result will be a count of correctly predicted users (out of 1000 test, by default)
+
+Our SQL classifier only classifies over gender. Our python and C++ classifiers provide functionality to classify over the other two attributes age and relationship status.
+
+Python Classifier
+=================
+
+Run the setuptables script.
+
+Run the rocchio2.py python script.
+
+The script will deliver a prompt asking the user to specify the number of folds to use in testing
+
+The python script, as is, limits the number of userid:term:count tuples it pulls from the SQL tables to 500,000. The resulting run will perform classification over this limited set of
+user data. Execution takes ~4 minutes with 2 folds. If  this is too long, the script can be further limited by changing the limit set in the query defined in line 6 to anything other 
+than 500,000. Alternatively, the limit can be eliminated from the query entirely, but this is not advisable, as a full run over the entire dataset will take ~9.5 hours to complete.
+
+As is, the code will perform classification over gender. In order to have the code classify over relationship status or age instead ...
+
+
+C++ Classifier
+==============
+
+To build, just run make
+
+###############################################################################
+Python Preprocessor: PyTokenSorter
+
+Provided user_status and user_demog are extracted into the "CPP Rocchio"
+folder, the preprocessor will generate the user status term frequency file
+and the user demog file for the target variable (set at the top of the
+preprocessor)
+
+This implementation will load roughly 7GB of data, and run in 30 minutes to
+1 hour 20 minutes (depending on the options used)
+
+NOTE: when running on the age attribute, you need to change the demog_file
+parsing to put them into groups to get the prediction accuracies in our paper
+
+###############################################################################
+Rocchio classifiers: Rocchio_raw and Rocchio_weighted
+
+After the preprocessor is run, Rocchio_raw and Rocchio_weighted will run
+10-fold cross validation on the processed datasets and print to STD out.
+
+These implementations will load roughly 12GB of data (good luck running this on
+CAEN...) and run in 6 minutes each.
