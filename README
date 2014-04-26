@@ -10,10 +10,12 @@ Login : rada_mihalcea
 Password : beuzii34
 
 The links to the appropriate data files are:
+http://mypersonality.org/wiki/lib/exe/fetch.php?media=download:big5.zip
+http://mypersonality.org/wiki/lib/exe/fetch.php?media=status:user_status.csv.zip
+http://mypersonality.org/wiki/lib/exe/fetch.php?media=download:demog.csv.zip
 
 
-
-We implement our Rocchio Classification Model in three languages: SQL, Python, and C++. Below you will find instructions on how to run each of the three implementations. We reccomend
+We implement our Rocchio Classification Model in three languages: SQL, Python, and C++. Below you will find instructions on how to run each of the three implementations. We recommend
 running the C++ implementation, as it is the fastest and most straightforward to execute.
 
 
@@ -23,7 +25,7 @@ SQL Classifier
 
 The queries in rocchio.sql will build the necessary views to perform classification on gender with 10,000 users. 
 
-After running the setuptables script (with sudo), you can then perform sql-based classification
+After copying the MyPersonality CSV files to /tmp and running the setuptables script (with sudo), you can then perform sql-based classification
 
 You can run these queries using psql and PostgreSQL, and they should finish in several hours. The result will be a count of correctly predicted users (out of 1000 test, by default)
 
@@ -32,7 +34,7 @@ Our SQL classifier only classifies over gender. Our python and C++ classifiers p
 Python Classifier
 =================
 
-Run the setuptables script.
+Run the setuptables script with the MyPersonality CSV files copied to /tmp.
 
 Run the rocchio2.py python script.
 
